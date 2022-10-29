@@ -1,0 +1,474 @@
+INSTALLIAMO DEBIAN SU RASPBERRY
+
+prima di inserire SD nel raspberry riaprite SD con il pc e create al suo interno un file di testo denominato SSH
+estraete SD e inseritela nel raspberry
+
+Usando MobaXterm accedete al Raspberry
+
+sudo raspi-config
+
+--Abilitate SSH
+--Modificate la località 
+--Attivate il wifi
+
+--Abbilita utente root--------------
+sudo nano /etc/ssh/sshd_config
+Aggiungere la riga seguente:
+PermitRootLogin yes
+sudo service ssh restart
+
+sudo passwd root
+
+https://www.youtube.com/watch?v=NGv7LeCaPtc
+https://www.lionbloggertech.com/how-to-setup-influxdb-telegraf-on-docker/
+
+
+------------INSTALLAZIONE DI DOCHER--------------------
+
+--Una volta collegati via SSH al proprio Raspberry (avendo cura di utilizzare l’utenza “pi“), eseguire innanzitutto un aggiornamento dell’ambiente tramite i seguenti comandi:
+
+sudo apt-get update -y
+sudo apt-get upgrade -y
+sudo reboot
+
+--Successivamente al riavvio causato dall’ultimo comando, installare tramite procedura automatica l’ambiente di virtualizzazione Docker tramite il comando:
+
+curl -sSL https://get.docker.com | sh
+
+--Controllare con
+
+docker -v
+
+sudo usermod -aG docker ${USER}
+groups ${USER}
+
+--Installa Docker-Compose
+
+sudo apt-get install libffi-dev libssl-dev
+sudo apt install python3-dev
+sudo apt-get install -y python3 python3-pip
+
+sudo pip3 install docker-compose
+
+abbilita il servizio
+
+sudo systemctl enable docker
+
+sudo chmod 666 /var/run/docker.sock
+
+docker run hello-world
+
+
+------installa portainer------
+
+docker run -d -p 9000:9000 -v /var/run/docker.sock:/var/run/docker.sock portainer/portainer
+
+--oppure
+
+docker pull portainer/portainer-ce
+
+docker run -d -p 8000:8000 -p 9000:9000 --name=portainer --restart=always -v /var/run/docker.sock:/var/run/docker.sock -v portainer_data:/data portainer/portainer-ce
+
+docker run -d -p 9000:9000 --name=portainer --restart=always -v /var/run/docker.sock:/var/run/docker.sock portainer/portainer
+
+http://your-server-address:9000
+
+docker run -d --name=grafana -p 3000:3000 grafana/grafana
+
+
+
+
+---------------Installazione di InfluxDB
+Installa InfluxDb con:
+
+
+docker run -d -p 8086:8086 \
+      -v $PWD/data:/var/lib/influxdb2 \
+      -v $PWD/config:/etc/influxdb2 \
+      -e DOCKER_INFLUXDB_INIT_MODE=setup \
+      -e DOCKER_INFLUXDB_INIT_USERNAME=admin \
+      -e DOCKER_INFLUXDB_INIT_PASSWORD=solaredge \
+      -e DOCKER_INFLUXDB_INIT_ORG=stepsolar \
+      -e DOCKER_INFLUXDB_INIT_BUCKET=telegraf \
+      influxdb:2.0
+
+docker network create --driver bridge influxdb-telegraf-net
+
+docker run -d --name=telegraf \
+      -v $PWD/data/telegraf.conf:/var/lib/influxdb \
+      --net=influxdb-telegraf-net \
+      telegraf
+
+docker run -d --name=telegraf \
+      -v $PWD/data/influxdb/telegraf.conf:/var/lib/influxdb \
+      -v $PWD/data/telegraf/telegraf.conf/telegraf.conf:/etc/telegraf/telegraf.conf:ro \
+      -v $PWD/data/telegraf/telegraf.d/:/etc/telegraf/telegraf.d \
+      -v $PWD/data/telegraf:/var/lib/telegraf \
+      --net=influxdb-telegraf-net \
+      telegraf
+
+
+
+version: '3'
+services:
+  telegraf:
+    image: telegraf:latest
+    container_name: telegraf_frezeen1
+    volumes:
+      - '/home/pi/data/telegraf/telegraf.conf/telegraf.conf:/etc/telegraf/telegraf.conf:ro'
+      - '/home/pi/data/telegraf:/var/lib/telegraf/'
+      - '/home/pi/data/telegraf/telegraf.d/:/etc/telegraf/telegraf.d'
+      - '/home/pi/data/telegraf:/var/lib/telegraf'
+    command: >
+      sh -c "apt update && apt install -y python3 python3-pip && python3 -m pip install requests pytz && telegraf"
+    restart: always
+
+
+
+
+
+docker exec -it telegraf /bin/bashf
+
+apt update
+apt install nano
+
+
+apt-get install libsqlite3-dev
+apt-get install sqlite3 
+apt-get install bzip2 libbz2-dev
+apt-get install build-essential
+apt-get install python3
+apt install python3-pip
+pip3 install requests
+python3 -m pip install requests
+python3 -m pip install pytz
+
+
+
+mkdir /docker/influxdb -p
+mkdir /docker/influxdb-backup -p 
+docker run -d -p 8086:8086 \
+       --restart=always \
+       --name=influxdb \
+       -e ADMIN_USER="root" \
+       -e INFLUXDB_INIT_PWD="YOURPASSWORD" \
+       -e INFLUXDB_ADMIN_ENABLED=true \
+       -e INFLUXDB_HTTP_FLUX_ENABLED=true \
+       -v /docker/influxdb:/var/lib/influxdb \
+       influxdb:1.7.9
+
+Dopo l'installazione, controlla se tutto è a posto con:
+
+curl -G http://localhost:8086/query --data-urlencode "q=SHOW DATABASES"
+
+dovrebbe restituire questo:
+{"results":[{"statement_id":0,"series":[{"name":"databases","columns":["name"]}]}]}
+
+
+Quindi crea il tuo primo database:
+Entra nel contenitore bash con
+
+docker exec -it influxdb /bin/bash
+
+quindi avvia Influx shell con
+
+influx
+
+restituisce questo:
+Connected to http://localhost:8086 version 1.7.9
+InfluxDB shell version: 1.7.9
+>
+
+continuate a scrivere dopo >
+
+Mostra quanti database esistono (prima volta, zero)
+
+SHOW DATABASES
+
+che restituisce questo:
+name: databases
+name
+----
+_internal
+> 
+
+e poi crea il tuo primo database
+
+CREATE DATABASE SOLAREDGE
+
+digitando nuovamente il comando 
+
+SHOW DATABASES
+
+verrà mostrato il database "solaredge"> SHOW DATABASES
+name: databases
+name
+----
+_internal
+solaredge
+
+
+Esci da shell e bash con:
+
+exit
+exit
+
+--------------Installazione Grafana------------------
+
+Installa Grafana con:
+
+# docker pull grafana/grafana:latest
+Elenca le immagini del Docker installate sul tuo sistema.
+# docker images
+
+REPOSITORY TAG IMAGE ID CREATED SIZE
+grafana/grafana latest d20d0cdfb55e 12 days ago 241MB
+
+Crea le cartelle richieste e imposta i permessi corretti.
+# mkdir /var/lib/grafana -p
+# chown -R 472:472 /var/lib/grafana
+
+Avviare una nuova finestra mobile Grafana utilizzando l'immagine di Grafana scaricata.
+# docker run -d -p 3000:3000 -v /var/lib/grafana:/var/lib/grafana -e "GF_SECURITY_ADMIN_PASSWORD=kamisama123" grafana/grafana
+
+cd382331678440add042df659ed7fd33b19de3a2a0a0d01f52fe07dda5fe0f6c
+
+Prendi nota dell'ID contenitore mobile.
+
+Il nostro contenitore Grafana ID cd382331678440add042df659ed7fd33b19de3a2a0a0d01f52fe07dda5fe0f6c
+
+Nel nostro esempio, l'immagine di Grafana è stata utilizzata per avviare un nuovo contenitore Grafana utilizzando la porta locale 3000.
+
+Nel nostro esempio, la password amministratore di Grafana è stata impostata su kamisama123.
+
+Verificare lo stato del contenitore Grafana usando il seguente comando:
+
+# docker ps -a -f id=cd382331678440add042df659ed7fd33b19de3a2a0a0d01f52fe07dda5fe0f6c
+
+CONTAINER ID IMAGE CREATED STATUS
+6cdc19eef9e0 grafana/grafana About an hour ago Up 20 minutes
+
+Per interrompere il servizio contenitore Grafana, utilizzare il seguente comando:
+# docker container stop cd382331678440add042df659ed7fd33b19de3a2a0a0d01f52fe07dda5fe0f6c
+
+Per avviare il servizio contenitore Grafana, utilizzare il seguente comando:
+# docker container start cd382331678440add042df659ed7fd33b19de3a2a0a0d01f52fe07dda5fe0f6c
+
+In caso di errore, utilizzare il seguente comando per verificare i log del contenitore Grafana.
+docker logs cd382331678440add042df659ed7fd33b19de3a2a0a0d01f52fe07dda5fe0f6c
+
+Tenere presente che è necessario modificare l'ID del contenitore finestra mobile per riflettere l'ambiente.
+
+
+Dopo l'installazione, accedi alla dashboard di Grafana con
+http://raspberry_IP:3000
+
+e segui i primi passi.
+Quando viene richiesta un'origine dati, scegli InfluxDB e utilizza i seguenti parametri:
+
+URL HTTP: http://raspberry_IP:8086
+Database dei dettagli di afflusso: solaredge
+Dettagli afflusso Utente: admin
+Dettagli afflusso Password: LA TUA PASSWORD
+Dettagli di afflusso Metodo HTTP: POST
+
+
+---------------Installazione MBMD------------------------
+
+docker run --name=mbmd -p 8080:8080 volkszaehler/mbmd run -a /dev/ttyUSB0 sdm:1,sdm:2 -r 5s --influx-url http://localhost:8086 --influx-database SDM120
+
+
+MBMD è un'applicazione leggera utilizzata per leggere i dati da Eastron SDM tramite connessione Modbus tramite l'adattatore USB. È un progetto aperto gestito dall'utente e al seguente repository
+
+https://github.com/volkszaehler/mbmd
+
+È scritto in linguaggio Go e offre:
+
+API di riposo
+API Websocket
+API MQTT
+Scrittura automatica su InfluxDB
+Lettura da diversi contatori di energia (tutti gli Eastron, alcuni Inepro, Janitza, DZG, SBC, BE e KOSTAL) e capacità di leggere tramite Modbus TCP da qualsiasi inverter compatibile SunSpec.
+
+Per questa installazione utilizzeremo la capacità di scrivere su InfluxDB, quindi dobbiamo solo installarlo come servizio e configurarlo per scrivere sull'istanza InfluxDb corrente.
+
+Scarica da github la versione compilata dal braccio, quindi decomprimi e copia in una cartella condivisa:
+
+wget https://github.com/volkszaehler/mbmd/releases/download/0.13/mbmd_0.13_linux_armv6.tar.gz
+tar xvf mbmd_0.13_linux_armv6.tar.gz
+sudo mv mbmd /usr/local/bin
+
+Controlla la nuova versione su github e scarica la più recente.
+
+Ora installalo come servizio che si avvia automaticamente all'avvio di Raspberry:
+
+cd /etc/systemd/system
+sudo nano mbmd.service
+
+e inserisci il seguente contenuto
+
+[Unit]    
+Description=mbmd
+After=syslog.target
+[Service]
+ExecStartPre=/bin/sleep 20
+ExecStart=/usr/local/bin/mbmd run -a /dev/ttyUSB0 -d sdm:1,sdm:2 -r 5s --influx-url http://localhost:8086 --influx-database test
+Restart=always
+User=root
+[Install]
+WantedBy=multi-user.target
+
+Questo è importante perché se mbmd viene avviato prima di InfluxDB, tutto fallisce. Quindi dobbiamo aspettare 20 secondi per far funzionare correttamente InfluxDb prima di mbmd.
+
+Salva il file, quindi avvia il servizio
+
+systemctl daemon-reload
+service mbmd start
+systemctl enable mbmd
+
+Puoi modificare i parametri del comando mbmd di cui hai bisogno:
+
+-a /dev/ttyUSB0
+Il dispositivo assegnato al lettore RS485
+
+-d sdm:1,sdm:2
+perché ho 2 SDM con id 1 e 2.
+
+-r 5s
+Leggi da SDM ogni 5 secondi.
+
+influx-url http://localhost:8086 --influx-database test
+Le coordinate InfluxDB.
+
+
+-------------AGGIORNAMENTO GRAFANA-------------
+
+sudo apt-get install -y adduser libfontconfig1
+wget https://dl.grafana.com/oss/release/grafana-rpi_7.5.10_armhf.deb
+sudo dpkg -i grafana-rpi_7.5.10_armhf.deb
+
+------------
+
+-------------ESPORTARE DATABASE INFLUX------
+
+sudo influxd backup -portable -database SDM -host 127.0.0.1:8088 /tmp/SDM_backup
+sudo influxd backup -portable -database solarmonitor -host 127.0.0.1:8088 /tmp/solarmonitor_backup
+sudo influxd backup -portable -database solaranzeige -host 127.0.0.1:8088 /tmp/solaranzeige_backup
+sudo influxd backup -portable -database SDM_SSP -host 127.0.0.1:8088 /tmp/SDM_SSP_backup
+sudo influxd backup -portable -database SDM_PDZ -host 127.0.0.1:8088 /tmp/SDM_PDZ_backup
+sudo influxd backup -portable -database solarmonitor -host 127.0.0.1:8088 /tmp/solarmonitor_backup
+sudo influxd backup -portable -database HomeManager -host 127.0.0.1:8088 /tmp/HomeManager_backup
+sudo influxd backup -portable -database E_Distribuzione -host 127.0.0.1:8088 /tmp/E_Distribuzione_backup
+
+-----RIPRISTINARE DATABASE INFLUX------
+
+sudo influxd restore -portable -db solarmonitor  /tmp/solarmonitor_backup
+sudo influxd restore -portable -db solaranzeige /tmp/solaranzeige_backup
+sudo influxd restore -portable -db SDM /tmp/SDM_backup
+sudo influxd restore -portable -db E_Distribuzione /tmp/E_Distribuzione_backup
+
+------PLUGIN GRAFANA---------
+sudo grafana-cli plugins install fetzerch-sunandmoon-datasource
+sudo grafana-cli plugins install grafana-clock-panel
+service grafana-server restart
+
+------------------------------
+
+
+-------------SPEGNERE RASPBERRY-----
+
+sudo halt
+
+--------------------
+
+-----------------docker-compose.yml----Solaranzeige---------
+
+version: "2"
+services:
+  solaranzeige:
+    image: takealug/solaranzeige:arm64v8
+    container_name: Solaranzeige
+    environment:
+      - PUID=1000
+      - PGID=995
+      - TIMEZONE=Europe/Rome
+      - UPDATE=yes
+      - MOSQUITTO=yes
+      - INFLUXDB=yes
+    volumes:
+      - /home/dockeruser/solaranzeige/data/solaranzeige:/solaranzeige
+      - /home/dockeruser/solaranzeige/data/pvforecast:/pvforecast
+      - /home/dockeruser/solaranzeige/data/influx:/var/lib/influxdb
+      - /home/dockeruser/solaranzeige/data/grafana:/var/lib/grafana
+      - /home/dockeruser/solaranzeige/data/www:/var/www
+      - /home/dockeruser/solaranzeige/data/tmp:/tmp
+    ports:
+      - 3000:3000
+      - 1883:1883
+      - 8080:80
+      - 8086:8086
+    devices:
+      - /dev/ttyUSB0:/dev/ttyUSB0
+    restart: unless-stopped
+
+
+----------------------------------------------
+
+wget http://ftp.debian.org/debian/pool/main/libs/libseccomp/libseccomp2_2.5.3-2_arm64.deb
+sudo dpkg -i libseccomp2_2.5.3-2_arm64.deb
+rm libseccomp2_2.5.3-2_arm64.deb
+
+-----------------------------------------------
+
+--------------docker home-assistent-------------
+
+version: '2'
+services:
+  home-assistant:
+    container_name: home-assistant
+    image: ghcr.io/home-assistant/home-assistant:stable
+    volumes:
+    - /home/pi/homeassistant:/config
+    environment:
+    - TZ=Europe/Rome
+    network_mode: host
+    restart: always
+
+version: '2'
+services:
+  homeassistant:
+    container_name: homeassistant
+    image: "ghcr.io/home-assistant/home-assistant:stable"
+    volumes:
+      - /home/pi/homeassistant:/config
+    environment:
+    - TZ=Europe/Rome
+    restart: unless-stopped
+    privileged: true
+    network_mode: host
+
+docker run -d \
+  --name homeassistant \
+  --privileged \
+  --restart=unless-stopped \
+  -e TZ=Europe/Rome \
+  -v /home/pi/homeassistant:/config \
+  --network=host \
+  ghcr.io/home-assistant/home-assistant:stable
+
+---------------------------------------------------
+
+sudo apt install -y jq
+sudo apt install -y bc
+
+sudo chmod +x /usr/bin/PVoutput.sh
+
+cd /usr/bin
+./PVoutput.sh
+
+echo "Start getting measurement from MBMD "$MBMD_IP" and upload to PVOutput "$PVOUTPUT_SYSID
+echo "Start getting measurement from MBMD "$MBMD_IP" and upload to PVOutput "$PVOUTPUT_SYSID | tee -a $LOG_FILE
+
+
+
+
