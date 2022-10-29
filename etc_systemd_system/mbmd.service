@@ -1,0 +1,10 @@
+[Unit]    
+Description=mbmd
+After=syslog.target
+[Service]
+ExecStartPre=/bin/sleep 30
+ExecStart=/usr/local/bin/mbmd run -a /dev/ttyUSB0 -d sdm:1,sdm:2 -r 5s 
+Restart=always
+User=root
+[Install]
+WantedBy=multi-user.target
