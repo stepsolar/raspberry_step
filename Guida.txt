@@ -19,6 +19,10 @@ sudo service ssh restart
 
 sudo passwd root
 
+https://www.youtube.com/watch?v=FdzPJ8LhAx4&list=LL&index=14
+https://www.youtube.com/watch?v=ivBPS5-zi04&list=LL&index=9
+https://uk.sauber-lab.com/2021/11/23/installing-home-assistant-supervised-directly-on-the-raspberry-pi/
+
 https://www.youtube.com/watch?v=NGv7LeCaPtc
 https://www.lionbloggertech.com/how-to-setup-influxdb-telegraf-on-docker/
 
