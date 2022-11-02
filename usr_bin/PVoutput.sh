@@ -11,9 +11,9 @@ readonly MBMD_GRID_ID="SDM1.2"
 
 ###### PV Output SECTION #######
 #insert PV Output API Key (from https://pvoutput.org/account.jsp)
-readonly PVOUTPUT_APIKEY="ebcbd4ebccb1729f1653c982dfc170750f257f68"
+readonly PVOUTPUT_APIKEY=""
 #insert PV Output System ID (from https://pvoutput.org/account.jsp)
-readonly PVOUTPUT_SYSID="82678"
+readonly PVOUTPUT_SYSID=""
 #insert "yes" to upload also production data from MBMD, "no" to upload only consumption
 readonly UPLOAD_PROD="no"
 
