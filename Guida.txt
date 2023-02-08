@@ -26,6 +26,10 @@ https://uk.sauber-lab.com/2021/11/23/installing-home-assistant-supervised-direct
 https://www.youtube.com/watch?v=NGv7LeCaPtc
 https://www.lionbloggertech.com/how-to-setup-influxdb-telegraf-on-docker/
 
+uname -m
+
+systemctl status NetworkManager
+systemctl enable NetworkManager
 
 ------------INSTALLAZIONE DI DOCHER--------------------
 
